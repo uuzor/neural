@@ -9,6 +9,7 @@ import {
   insertTradingLogSchema,
   insertInvestmentAllocationSchema 
 } from "@shared/schema";
+import { hashDecision } from "./services/contracts.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -302,6 +303,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ hash, note: "Data retrievable via 0G indexer client; implement query based on your indexing strategy." });
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve from storage", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // On-chain trade execution with 0G proof persistence
+  app.post("/api/trades", async (req, res) => {
+    try {
+      const { agent, asset, amount, price, isBuy, decisionPayload, provider, model } = req.body;
+
+      // 1) Request inference (if client didn't provide proof yet)
+      const { runInference } = await import("./services/ogBroker.js");
+      const inference = await runInference({
+        model,
+        provider,
+        input: decisionPayload?.input ?? {},
+        generateProof: true
+      });
+
+      // 2) Compute aiDecisionHash over normalized envelope
+      const envelope = {
+        action: inference.output?.action,
+        asset,
+        amount,
+        price,
+        confidence: inference.output?.confidence,
+        modelHash: inference.modelHash,
+        requestId: inference.requestId,
+        provider: inference.provider,
+        timestamp: Date.now()
+      };
+      const aiDecisionHash = hashDecision(envelope);
+
+      // 3) Persist full inference payload to 0G storage
+      const { storeObject } = await import("./services/ogStorage.js");
+      const storageHash = await storeObject({
+        agent,
+        asset,
+        amount,
+        price,
+        isBuy,
+        envelope,
+        proof: inference.proof,
+        rawOutput: inference.output
+      });
+
+      // 4) Submit on-chain executeTrade
+      const { getTradingContract } = await import("./services/contracts.js");
+      const trading = getTradingContract();
+      const tx = await trading.executeTrade(
+        agent,
+        asset,
+        amount,
+        price,
+        isBuy,
+        aiDecisionHash,
+        inference.proof || "0x"
+      );
+      const receipt = await tx.wait();
+
+      res.json({
+        success: true,
+        storageHash,
+        aiDecisionHash,
+        txHash: receipt?.hash || tx.hash,
+        requestId: inference.requestId,
+        provider: inference.provider
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to execute trade", error: error?.message || "Unknown error" });
+    }
+  });
+
+  // Admin endpoints for alignment nodes and violations
+  app.post("/api/admin/alignment-node", async (req, res) => {
+    try {
+      const { node, allowed } = req.body as { node: string; allowed: boolean };
+      const { getTradingContract } = await import("./services/contracts.js");
+      const trading = getTradingContract();
+      const tx = await trading.setAlignmentNode(node, !!allowed);
+      await tx.wait();
+      res.json({ success: true, node, allowed: !!allowed });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update alignment node", error: error?.message || "Unknown error" });
+    }
+  });
+
+  app.post("/api/alignment/report", async (req, res) => {
+    try {
+      const { agent, severityScore, evidence } = req.body as { agent: string; severityScore: number; evidence: any };
+      const { getTradingContract } = await import("./services/contracts.js");
+      const trading = getTradingContract();
+      const evidenceBytes = Buffer.from(JSON.stringify(evidence || {}));
+      const tx = await trading.reportAlignmentViolation(agent, evidenceBytes, severityScore);
+      await tx.wait();
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to report alignment violation", error: error?.message || "Unknown error" });
     }
   });
 
