@@ -21,6 +21,7 @@ import {
   Database
 } from "lucide-react";
 import type { TradingAgent, TradingSession, User } from "@shared/schema";
+import { TradeWithProof } from "@/components/trade-with-proof";
 
 interface AgentWithSessions extends TradingAgent {
   sessions?: TradingSession[];
@@ -394,6 +395,15 @@ export default function Agents() {
                                   {new Date(agent.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Trade with Proof */}
+                            <div className="mt-6">
+                              <h4 className="text-sm font-semibold mb-2">Execute Trade with OG Proof</h4>
+                              <TradeWithProof
+                                agentId={agent.contractAddress || agent.id}
+                                defaultModel={agent.ogComputeModel}
+                              />
                             </div>
                           </div>
                         </CardContent>
