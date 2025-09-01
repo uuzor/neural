@@ -47,6 +47,25 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Start arbitrage scanner (MVP, configurable via env)
+  try {
+    const enabled = (process.env.ARB_SCANNER_ENABLED || "false").toLowerCase() === "true";
+    if (enabled) {
+      const { startArbScanner } = await import("./services/arbitrage.js");
+      await startArbScanner({
+        enabled: true,
+        intervalMs: Number(process.env.ARB_SCANNER_INTERVAL_MS || 15000),
+        assets: (process.env.ARB_SCANNER_ASSETS || "ETH/USDC").split(","),
+        agent: process.env.ARB_SCANNER_AGENT,
+        model: process.env.ARB_SCANNER_MODEL || "llama-3.3-70b-instruct",
+        provider: process.env.ARB_SCANNER_PROVIDER
+      });
+      log("Arbitrage scanner started");
+    }
+  } catch (e) {
+    log(`Failed to start arbitrage scanner: ${(e as any)?.message || e}`);
+  }
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes

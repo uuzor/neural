@@ -306,6 +306,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Arbitrage endpoints
+  app.get("/api/arbitrage/find", async (req, res) => {
+    try {
+      const asset = (req.query.asset as string) || "ETH/USDC";
+      const minSpread = req.query.minSpread ? Number(req.query.minSpread) : undefined;
+      const amount = req.query.amount ? Number(req.query.amount) : undefined;
+      const { findArbOpportunities } = await import("./services/arbitrage.js");
+      const opps = await findArbOpportunities({ asset, minSpread, amount });
+      res.json(opps);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to find arbitrage opportunities", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.post("/api/arbitrage/execute", async (req, res) => {
+    try {
+      const { agent, asset, amount, model, provider } = req.body as { agent: string; asset: string; amount: number; model: string; provider?: string };
+      const { executeArb, recordArb } = await import("./services/arbitrage.js");
+      const result = await executeArb({ agent, asset, amount, model, provider });
+      recordArb({ asset, result, at: Date.now() });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to execute arbitrage", error: error?.message || "Unknown error" });
+    }
+  });
+
+  app.get("/api/arbitrage/recent", async (_req, res) => {
+    try {
+      const { getRecentArbs } = await import("./services/arbitrage.js");
+      res.json(getRecentArbs());
+    } catch (error) {
+      res.status(500).json({ message: "Failed to load recent arbitrage ops", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   // On-chain trade execution with 0G proof persistence
   app.post("/api/trades", async (req, res) => {
     try {
