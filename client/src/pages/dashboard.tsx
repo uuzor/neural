@@ -9,6 +9,7 @@ import { PerformanceChart } from "@/components/performance-chart";
 import { OGNetworkStatus } from "@/components/og-network-status";
 import { AgentDeploymentWizard } from "@/components/agent-deployment-wizard";
 import { SimulationConsole } from "@/components/simulation-console";
+import { ArbDashboard } from "@/components/arb-dashboard";
 import { useWallet } from "@/hooks/use-wallet";
 import { useZGBroker } from "@/hooks/use-0g-broker";
 import { Link } from "wouter";
@@ -284,128 +285,9 @@ export default function Dashboard() {
           />
         </section>
 
-        {/* 0G Integration Dashboard */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8" data-testid="section-0g-integration">
-          {/* 0G Compute Network Integration */}
-          <Card className="bg-card rounded-xl border border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">0G Compute Network</h2>
-                <div className="flex items-center space-x-2 text-sm text-success">
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                  <span>Connected</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Card className="bg-secondary/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Available Providers</span>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        Refresh
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">llama-3.3-70b-instruct</span>
-                        <span className="text-success">Available</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">deepseek-r1-70b</span>
-                        <span className="text-success">Available</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-secondary/30">
-                  <CardContent className="p-4">
-                    <div className="text-sm font-medium mb-2">Recent Inference Calls</div>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div className="flex justify-between">
-                        <span>Market analysis request</span>
-                        <span>2 min ago</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Trading signal generation</span>
-                        <span>5 min ago</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Risk assessment</span>
-                        <span>8 min ago</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Button className="w-full" data-testid="button-test-inference">
-                  Test AI Inference
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 0G Storage & DA Integration */}
-          <Card className="bg-card rounded-xl border border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Storage & Data Availability</h2>
-                <div className="flex items-center space-x-2 text-sm text-success">
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                  <span>Synced</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="bg-secondary/30">
-                    <CardContent className="p-4">
-                      <div className="text-sm font-medium mb-1">Storage Used</div>
-                      <div className="text-lg font-bold">2.4 GB</div>
-                      <div className="text-xs text-muted-foreground">of 10 GB plan</div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-secondary/30">
-                    <CardContent className="p-4">
-                      <div className="text-sm font-medium mb-1">DA Blobs</div>
-                      <div className="text-lg font-bold">847</div>
-                      <div className="text-xs text-muted-foreground">stored today</div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="bg-secondary/30">
-                  <CardContent className="p-4">
-                    <div className="text-sm font-medium mb-2">Recent Trading Logs</div>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-mono">0x7f8e...9a0b</span>
-                        <span className="text-success">Verified</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-mono">0x9a0b...1c2d</span>
-                        <span className="text-success">Verified</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-mono">0x1c2d...3e4f</span>
-                        <span className="text-warning">Pending</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="secondary" className="text-sm" data-testid="button-upload-logs">
-                    Upload Logs
-                  </Button>
-                  <Button variant="outline" className="text-sm" data-testid="button-view-storage">
-                    View Storage
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* 0G Arbitrage Dashboard */}
+        <section className="bg-transparent" data-testid="section-arb-dashboard">
+          <ArbDashboard />
         </section>
 
         {/* Agent Deployment */}
