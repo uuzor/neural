@@ -254,91 +254,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 0G Compute integration routes
+  // 0G Compute integration routes (real broker)
   app.post("/api/0g/compute/inference", async (req, res) => {
     try {
-      const { provider, prompt, model } = req.body;
-      
-      // This would integrate with actual 0G Compute SDK
-      // For now, return a mock response
-      const mockResponse = {
-        requestId: `req-${Date.now()}`,
+      const { provider, input, model, maxTokens, temperature, generateProof } = req.body;
+      const { runInference } = await import("./services/ogBroker.js");
+      const result = await runInference({
         provider,
+        input,
         model,
-        response: "Market analysis suggests bullish momentum for ETH/USDC pair based on technical indicators.",
-        timestamp: new Date().toISOString(),
-        cost: "0.001",
-        verified: true
-      };
-      
-      res.json(mockResponse);
+        maxTokens,
+        temperature,
+        generateProof
+      });
+      res.json(result);
     } catch (error) {
       res.status(500).json({ message: "Failed to process inference", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
-  app.get("/api/0g/compute/providers", async (req, res) => {
+  app.get("/api/0g/compute/providers", async (_req, res) => {
     try {
-      // Mock 0G Compute providers based on documentation
-      const providers = [
-        {
-          provider: "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
-          model: "llama-3.3-70b-instruct",
-          serviceType: "LLM",
-          inputPrice: "100000000000000", // 0.0001 OG per request
-          outputPrice: "200000000000000", // 0.0002 OG per response
-          verifiability: "TeeML",
-          status: "online"
-        },
-        {
-          provider: "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
-          model: "deepseek-r1-70b",
-          serviceType: "LLM",
-          inputPrice: "150000000000000", // 0.00015 OG per request
-          outputPrice: "300000000000000", // 0.0003 OG per response
-          verifiability: "TeeML",
-          status: "online"
-        }
-      ];
-      
+      const { getProviders } = await import("./services/ogBroker.js");
+      const providers = await getProviders();
       res.json(providers);
     } catch (error) {
       res.status(500).json({ message: "Failed to get providers", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
-  // 0G Storage integration routes
+  // 0G Storage integration routes (real indexer/storage)
   app.post("/api/0g/storage/upload", async (req, res) => {
     try {
-      const { data, filename } = req.body;
-      
-      // Mock storage upload - would use actual 0G Storage SDK
-      const mockUpload = {
-        hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-        filename,
-        size: JSON.stringify(data).length,
-        timestamp: new Date().toISOString(),
-        verified: true
-      };
-      
-      res.json(mockUpload);
+      const { data } = req.body;
+      const { storeObject } = await import("./services/ogStorage.js");
+      const hash = await storeObject(data);
+      res.json({ hash, verified: true, timestamp: new Date().toISOString() });
     } catch (error) {
       res.status(500).json({ message: "Failed to upload to storage", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
+  // retrieval via indexer is app-specific; provide a placeholder acknowledging persistence by hash
   app.get("/api/0g/storage/:hash", async (req, res) => {
     try {
       const { hash } = req.params;
-      
-      // Mock storage retrieval
-      const mockData = {
-        hash,
-        data: { tradingDecision: "BUY", confidence: 0.87, timestamp: new Date().toISOString() },
-        retrievedAt: new Date().toISOString()
-      };
-      
-      res.json(mockData);
+      res.json({ hash, note: "Data retrievable via 0G indexer client; implement query based on your indexing strategy." });
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve from storage", error: error instanceof Error ? error.message : "Unknown error" });
     }
